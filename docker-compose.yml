@@ -4,32 +4,9 @@ services:
 
   bioformats2raw:
     build: bioformats2raw
+    entrypoint:
+      - "/src/script.sh"
     volumes:
-      - "/uod/idr/filesets/idr0066-voigt-mesospim/20190821-ftp/ExperimentD/data:/data:ro"
+      - ".:/src"
       - "/uod/idr/filesets:/uod/idr/filesets:ro"
       - "/uod/idr-scratch/josh-n5:/out"
-    command:
-      # /out/a.fake
-      # /out/v2.zarr
-      - /uod/idr/filesets/idr0062-blin-nuclearsegmentation/20190429-ftp/Blastocysts/B1_C1.tif
-      - /out/6001240.zarr.new2
-      - --file_type
-      - zarr
-      - --dimension-order
-      - XYZCT
-      # -h
-      # "64"
-      # -w
-      # "64"
-      # --debug
-      # /data/ExpD_chicken_embryo_stitched.ome.tif
-      # /out/embryo.n5
-
-  neuroglancer:
-    #build: neuroglancer
-    image: 4quant/neuroglancer
-    ports:
-      - "8989:8989"
-      - "8888:8888"
-    volumes:
-      - "/uod/idr-scratch/josh-n5:/home/neuroglancer_user/local_notebooks/data:ro"
