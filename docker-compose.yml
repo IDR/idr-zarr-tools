@@ -8,5 +8,29 @@ services:
       - "/src/script.sh"
     volumes:
       - ".:/src"
+      - "/uod/idr/scratch/idr1-slot2/josh-n5:/out"
+      - "/uod/idr:/uod/idr:ro"
+      - "/uod/idr/objectstore/minio/idr/zarr/v0.1:/v0.1"
+
+  rechunk:
+    build: omero-ms-zarr
+    entrypoint:
+      - "/opt/conda/bin/python"
+      - "/src/omero-ms-zarr/src/scripts/rechunk.py"
+    volumes:
+      - ".:/src"
       - "/uod/idr/filesets:/uod/idr/filesets:ro"
-      - "/uod/idr-scratch/josh-n5:/out"
+      - "/uod/idr/incoming:/uod/idr/incoming:ro"
+      - "/uod/idr/scratch/idr1-slot2/josh-n5:/uod/idr/scratch/idr1-slot2/josh-n5"
+      - "/uod/idr/objectstore/minio/idr/zarr/v0.1:/v0.1"
+    ports:
+      - "8787:8787"
+
+  transfer:
+    build: transfer
+    volumes:
+      - "/uod/idr/scratch/idr1-slot2/josh-n5:/uod/idr/scratch/idr1-slot2/josh-n5:ro"
+      - "/uod/idr/objectstore/minio/idr/zarr/v0.1:/uod/idr/objectstore/minio/idr/zarr/v0.1:ro"
+    environment:
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
