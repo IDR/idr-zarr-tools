@@ -7,16 +7,35 @@ set -e
 set -u
 set -x
 
-IMAGE=$1; shift
+IMAGE_OR_FILE=$1; shift
 INPUT=$1; shift
 OUTPUT=$1; shift
 
+EXTRA_ARGS=
 echo "Converting $INPUT to /$OUTPUT..."
-time $EXE "$INPUT" "/$OUTPUT" --file_type=zarr --dimension-order=XYZCT
+if [ -e "${IMAGE_OR_FILE}" ];
+then
+   echo Found file: $IMAGE_OR_FILE
+   # Use the first column of the CSV (%3) as the group and omit use of the series ID (%1)
+   EXTRA_ARGS="--scale-format-string=%3\$s/%2\$s --additional-scale-format-string-args=${IMAGE_OR_FILE}"
+fi
+
+time $EXE "$INPUT" "/$OUTPUT" --file_type=zarr --dimension-order=XYZCT ${EXTRA_ARGS}
 ls "/$OUTPUT"
 
-# TBD Move first series to the image name
-mv /$OUTPUT/data.zarr/0 /v0.1/${IMAGE}.zarr
+if [ -e "${IMAGE_OR_FILE}" ];
+then
+    for IMAGE in $(cut -f1 -d, "${IMAGE_OR_FILE}");
+    do
+        echo Image:${IMAGE}
+        mv /$OUTPUT/data.zarr/${IMAGE} /v0.1/${IMAGE}.zarr
+    done
+else
+    # Move first (and only) of series to the image name
+    mv /$OUTPUT/data.zarr/0 /v0.1/${IMAGE_OR_FILE}.zarr
+fi
+
+# Cleanup
 rm /$OUTPUT/data.zarr/.zattrs
 rm /$OUTPUT/data.zarr/.zgroup
 rmdir /$OUTPUT/data.zarr
