@@ -5,7 +5,7 @@ import json
 import argparse
 
 
-def update_zattrs(zarr_dir, rendering_json=None, dry_run=False):
+def update_zattrs(zarr_dir, omero_json=None, dry_run=False):
     rv = dict()
     if os.path.exists(f"{zarr_dir}/.zattrs"):
         with open(f"{zarr_dir}/.zattrs") as o:
@@ -17,18 +17,18 @@ def update_zattrs(zarr_dir, rendering_json=None, dry_run=False):
             multiscale["datasets"].append({"path": path})
         rv["multiscales"] = [multiscale]
 
-    if not rendering_json:
+    if not omero_json:
         with open(f"{zarr_dir}/omero.json", "r") as o:
-            rendering_json = json.load(o)
+            omero_json = json.load(o)
 
     rv["omero"] = {}
-    if "version" not in omero:
-        omero["version" ] = "0.1"
+    if "version" not in omero_json:
+        omero_json["version" ] = "0.1"
     for x in ("version", "channels", "rdefs"):
-        rv["omero"][x] = omero[x]
+        rv["omero"][x] = omero_json[x]
 
-    rv["omero"]["id"] = omero["id"]
-    rv["omero"]["name"] = omero["meta"]["imageName"]
+    rv["omero"]["id"] = omero_json["id"]
+    rv["omero"]["name"] = omero_json["meta"]["imageName"]
     for ch in rv["omero"]["channels"]:
         for x in ("reverseIntensity", "emissionWave"):
             ch.pop(x, None)
@@ -56,7 +56,7 @@ def get_zarr_directories(top_dirs, recursive):
     return(paths)
 
 
-def get_rendering_json(json_file):
+def get_omero_json(json_file):
     if json_file:
         with open(f"{json_file}", "r") as o:
             return json.load(o)
@@ -76,6 +76,6 @@ if __name__ == "__main__":
     args = p.parse_args()
 
     zarr_dirs = get_zarr_directories(args.dir, args.recursive)
-    rendering_json = get_rendering_json(args.file)
+    omero_json = get_omero_json(args.file)
     for zarr_dir in zarr_dirs:
-        update_zattrs(zarr_dir, rendering_json=rendering_json, dry_run=False)
+        update_zattrs(zarr_dir, omero_json=omero_json, dry_run=False)
