@@ -3,30 +3,23 @@ import os
 import glob
 import json
 import argparse
-p = argparse.ArgumentParser()
-p.add_argument("dir", nargs="+")
-p.add_argument("rendering_json", nargs="?")
-a = p.parse_args()
-rv = dict()
 
-if a.rendering_json:
-    with open(f"{a.rendering_json}", "r") as o:
-        omero = json.load(o)
 
-for dir in a.dir:
-    if os.path.exists(f"{dir}/.zattrs"):
-        with open(f"{dir}/.zattrs") as o:
+def update_zattrs(zarr_dir, rendering_json=None):
+    rv = dict()
+    if os.path.exists(f"{zarr_dir}/.zattrs"):
+        with open(f"{zarr_dir}/.zattrs") as o:
             rv.update(json.load(o))
     else:
         multiscale = {"datasets":[],"version":"0.1"}
-        for path in sorted(glob.glob(f"{dir}/[0-9]*")):
+        for path in sorted(glob.glob(f"{zarr_dir}/[0-9]*")):
             path = path.split("/")[-1]
             multiscale["datasets"].append({"path": path})
         rv["multiscales"] = [multiscale]
 
-    if not a.rendering_json:
-        with open(f"{dir}/omero.json", "r") as o:
-            omero = json.load(o)
+    if not rendering_json:
+        with open(f"{zarr_dir}/omero.json", "r") as o:
+            rendering_json = json.load(o)
 
     rv["omero"] = {}
     if "version" not in omero:
@@ -42,5 +35,43 @@ for dir in a.dir:
     rv["omero"]["rdefs"].pop("invertAxis", None)
     rv["omero"]["rdefs"].pop("projection", None)
 
-    with open(f"{dir}/.zattrs", "w") as o:
+    with open(f"{zarr_dir}/.zattrs", "w") as o:
         o.write(json.dumps(rv, indent=4, sort_keys=True))
+
+
+def get_zarr_directories(args):
+    if not args.recursive:
+       return args.dir
+
+    if len(args.dir) > 1:
+        raise Exception("Recursive option can only be used with one directory")
+
+    paths = []
+    for root, dirs, files in os.walk(args.dir[0]):
+        for f in files:
+            if f.lower() == '.zattrs':
+                paths.append(root)
+    return(paths)
+
+
+def get_rendering_json(args):
+    if args.rendering_json_file:
+        with open(f"{a.rendering_json_file}", "r") as o:
+            return json.load(o)
+    else:
+        return None
+
+
+if __name__ == "__main__":
+    p = argparse.ArgumentParser()
+    p.add_argument("dir", nargs="+", help="the Zarr directory")
+    p.add_argument("rendering_json_file", nargs="?",
+                   help="a JSON file containing the rendering settings")
+    p.add_argument("--recursive", "-r", action='store_true',
+                   help="apply recursively to all Zarr sub-directories")
+    args = p.parse_args()
+
+    zarr_dirs = get_zarr_directories(args)
+    rendering_json = get_rendering_json(args)
+    for zarr_dir in zarr_dirs:
+        update_zattrs(zarr_dir, rendering_json=rendering_json)
