@@ -1,13 +1,17 @@
 #!/usr/bin/env python
 import os
-import sys
 import glob
 import json
 import argparse
 p = argparse.ArgumentParser()
 p.add_argument("dir", nargs="+")
+p.add_argument("rendering_json", nargs="?")
 a = p.parse_args()
 rv = dict()
+
+if a.rendering_json:
+    with open(f"{a.rendering_json}", "r") as o:
+        omero = json.load(o)
 
 for dir in a.dir:
     if os.path.exists(f"{dir}/.zattrs"):
@@ -20,8 +24,9 @@ for dir in a.dir:
             multiscale["datasets"].append({"path": path})
         rv["multiscales"] = [multiscale]
 
-    with open(f"{dir}/omero.json", "r") as o:
-        omero = json.load(o)
+    if not a.rendering_json:
+        with open(f"{dir}/omero.json", "r") as o:
+            omero = json.load(o)
 
     rv["omero"] = {}
     if "version" not in omero:
