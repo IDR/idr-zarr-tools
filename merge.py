@@ -41,24 +41,24 @@ def update_zattrs(zarr_dir, rendering_json=None, dry_run=False):
         o.write(json.dumps(rv, indent=4, sort_keys=True))
 
 
-def get_zarr_directories(args):
-    if not args.recursive:
-       return args.dir
+def get_zarr_directories(top_dirs, recursive):
+    if not recursive:
+       return top_dirs
 
-    if len(args.dir) > 1:
+    if len(top_dirs) > 1:
         raise Exception("Recursive option can only be used with one directory")
 
     paths = []
-    for root, dirs, files in os.walk(args.dir[0]):
+    for root, dirs, files in os.walk(top_dirs[0]):
         for f in files:
             if f.lower() == '.zattrs':
                 paths.append(root)
     return(paths)
 
 
-def get_rendering_json(args):
-    if args.rendering_json_file:
-        with open(f"{a.rendering_json_file}", "r") as o:
+def get_rendering_json(json_file):
+    if json_file:
+        with open(f"{json_file}", "r") as o:
             return json.load(o)
     else:
         return None
@@ -67,7 +67,7 @@ def get_rendering_json(args):
 if __name__ == "__main__":
     p = argparse.ArgumentParser()
     p.add_argument("dir", nargs="+", help="the Zarr directory")
-    p.add_argument("rendering_json_file", nargs="?",
+    p.add_argument('--file',
                    help="a JSON file containing the rendering settings")
     p.add_argument("--dry-run", "-n", action='store_true',
                    help="dry-run")
@@ -75,7 +75,7 @@ if __name__ == "__main__":
                    help="apply recursively to all Zarr sub-directories")
     args = p.parse_args()
 
-    zarr_dirs = get_zarr_directories(args)
-    rendering_json = get_rendering_json(args)
+    zarr_dirs = get_zarr_directories(args.dir, args.recursive)
+    rendering_json = get_rendering_json(args.file)
     for zarr_dir in zarr_dirs:
         update_zattrs(zarr_dir, rendering_json=rendering_json, dry_run=False)
