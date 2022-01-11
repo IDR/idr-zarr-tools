@@ -1,6 +1,6 @@
 [submodule "bioformats2raw"]
 	path = bioformats2raw
-	url = git://github.com/glencoesoftware/bioformats2raw
+	url = https://github.com/glencoesoftware/bioformats2raw
 [submodule "omero-ms-zarr"]
 	path = omero-ms-zarr
-	url = git://github.com/ome/omero-ms-zarr
+	url = https://github.com/ome/omero-ms-zarr
